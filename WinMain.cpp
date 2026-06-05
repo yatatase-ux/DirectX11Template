@@ -75,6 +75,34 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 HRESULT InitBackBuffer(void);
 
 /*-------------------------------------------
+    構造体定義
+--------------------------------------------*/
+struct FloatColor
+{
+	float r, g, b, a;
+};
+
+/*-------------------------------------------
+	グローバル変数(画面の色)
+---------------------------------------------*/
+FloatColor g_ClearColor = { 0.0f, 0.125f, 0.3f, 1.0f };					 // 画面クリアに使用する色
+const FloatColor g_ClearColorTarget = { 0.0f, 0.125f, 0.3f, 1.0f };		 // 画面クリアに使用する色の目標値
+FloatColor g_ClearColorStep = {											 // 画面クリアに使用する色の変化量
+	( 1.0f - g_ClearColorTarget.r) / 6000.0f,
+	( 1.0f - g_ClearColorTarget.g) / 6000.0f,
+	( 1.0f - g_ClearColorTarget.b) / 6000.0f,
+	0.0f 
+};
+
+/*-------------------------------------------
+	グローバル変数(三角形の頂点)
+---------------------------------------------*/
+struct Vertex
+{
+	float x, y, z;		// 頂点の位置
+};
+
+/*-------------------------------------------
 	アプリケーション初期化
 --------------------------------------------*/
 HRESULT InitApp(HINSTANCE hInst)
@@ -264,12 +292,12 @@ HRESULT InitBackBuffer(void)
 /*--------------------------------------------
 	画面の描画処理
 --------------------------------------------*/
-HRESULT Render(void)
+HRESULT Render(FloatColor color)
 {
 	HRESULT hr;
 
 	// 描画ターゲットのクリア
-	float ClearColor[4] = { 0.0f, 0.125f, 0.3f, 1.0f }; // Windowの色
+	float ClearColor[4] = { color.r, color.g, color.b, color.a }; // Windowの色
 
 	g_pImmediateContext->ClearRenderTargetView(
 		g_pRenderTargetView, // クリアする描画ターゲット
@@ -298,6 +326,24 @@ HRESULT Render(void)
 		0);  // 画面を実際に更新する
 
 	return hr;
+}
+
+/*-------------------------------------------
+	色の変更
+--------------------------------------------*/
+void ChangeColor(FloatColor& color)
+{
+	color.r += g_ClearColorStep.r;
+	if (color.r > 1.0f)
+		color.r = g_ClearColorTarget.r;
+
+	color.g += g_ClearColorStep.g;
+	if (color.g > 1.0f)
+		color.g = g_ClearColorTarget.g;
+
+	color.b += g_ClearColorStep.b;
+	if (color.b > 1.0f)
+		color.b = g_ClearColorTarget.b;
 }
 
 /*-------------------------------------------
@@ -413,7 +459,8 @@ bool AppIdle(void)
 		return false;
 
 	// 画面の更新
-	Render();
+//	ChangeColor(g_ClearColor);
+	Render(g_ClearColor);
 
 	return true;
 }
